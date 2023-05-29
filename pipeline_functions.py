@@ -11,6 +11,58 @@ from scipy import linalg as LA
 import math
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
+ch_names_montage = {'EEG FP1-AA': 'Fp1','EEG FP2-AA': 'Fp2', 'EEG F3-AA': 'F3','EEG F4-AA': 'F4','EEG FZ-AA': 'Fz','EEG C3-AA': 'C3','EEG C4-AA': 'C4',
+                'EEG CZ-AA': 'Cz', 'EEG P3-AA': 'P3', 'EEG P4-AA': 'P4', 'EEG PZ-AA': 'Pz', 'EEG F7-AA': 'F7', 'EEG F8-AA': 'F8', 'EEG T3-AA': 'T3',
+                'EEG T4-AA': 'T4', 'EEG T5-AA': 'T5', 'EEG T6-AA': 'T6', 'EEG FPZ-AA': 'Fpz', 'EEG OZ-AA': 'Oz', 'EEG A2-AA': 'A2', 'EEG A1-AA': 'A1',
+                'EEG FC1-AA': 'FC1', 'EEG FC3-AA': 'FC3', 'EEG C1-AA': 'C1', 'EEG C5-AA': 'C5', 'EEG CP5-AA': 'CP5', 'EEG FC2-AA': 'FC2', 'EEG FC4-AA': 'FC4',
+                'EEG C2-AA': 'C2', 'EEG C6-AA': 'C6', 'EEG CP6-AA': 'CP6', 'EEG CPZ-AA': 'CPz', 'EEG CP1-AA': 'CP1', 'EEG CP2-AA': 'CP2'}
+
+
+# Função para abrir o sinal raw já fazendo o pré-processamento inicial básico, trigger, drop e montage
+# Além disso, faz o resampling para 600 hz
+
+def abre_preprocessa_reamostra(raw):
+    dados_raw = mne.io.read_raw_edf(raw, preload=True, verbose=False)
+    dados_raw.set_channel_types({'TRIGGER[DC1]': 'stim', 'EMG-0': 'emg', 'EMG-1': 'emg'})
+    dados_raw.drop_channels(['POSITION Posição', 'DC2'])
+    mne.rename_channels(dados_raw.info, ch_names_montage)
+    dados_raw = my_montage(dados_raw, dados_raw.ch_names)
+    ch_names = dados_raw.ch_names
+    dados_raw.drop_channels(['TRIGGER[DC1]', 'EMG-0', 'EMG-1', 'A1', 'A2', 'Fp1', 'Fp2'])
+    sfreq = 600
+    dados_raw = dados_raw.resample(sfreq=sfreq)
+    info = dados_raw.info
+    return dados_raw, info
+
+def abre_preprocessa_reamostra_cluster_esquerdo(raw):
+    dados_raw = mne.io.read_raw_edf(raw, preload=True, verbose=False)
+    dados_raw.set_channel_types({'TRIGGER[DC1]': 'stim', 'EMG-0': 'emg', 'EMG-1': 'emg'})
+    dados_raw.drop_channels(['POSITION Posição', 'DC2'])
+    mne.rename_channels(dados_raw.info, ch_names_montage)
+    dados_raw = my_montage(dados_raw, dados_raw.ch_names)
+    ch_names = dados_raw.ch_names
+    dados_raw.drop_channels(['TRIGGER[DC1]', 'EMG-0', 'EMG-1', 'A1', 'A2', 'Fp1', 'Fp2', ])
+    dados_raw.pick_channels(['C3','C5','P3','CP1','FP1'])
+    sfreq = 600
+    dados_raw_cluster_esquerdo = dados_raw.resample(sfreq=sfreq)
+    info_esq = dados_raw_cluster_esquerdo.info
+    return dados_raw_cluster_esquerdo, info_esq
+
+
+def abre_preprocessa_reamostra_cluster_direito(raw):
+    dados_raw = mne.io.read_raw_edf(raw, preload=True, verbose=False)
+    dados_raw.set_channel_types({'TRIGGER[DC1]': 'stim', 'EMG-0': 'emg', 'EMG-1': 'emg'})
+    dados_raw.drop_channels(['POSITION Posição', 'DC2'])
+    mne.rename_channels(dados_raw.info, ch_names_montage)
+    dados_raw = my_montage(dados_raw, dados_raw.ch_names)
+    ch_names = dados_raw.ch_names
+    dados_raw.drop_channels(['TRIGGER[DC1]', 'EMG-0', 'EMG-1', 'A1', 'A2', 'Fp1', 'Fp2'])
+    dados_raw.pick_channels(['C4','C6','P4','CP2','FC2'])
+    sfreq = 600
+    dados_raw_cluster_direito = dados_raw.resample(sfreq=sfreq)
+    info_dir = dados_raw_cluster_direito.info
+    return dados_raw_cluster_direito, info_dir
+
 #Função para montagem de eletrodos - plotar as cabecinhas
 def my_montage(raw, ch_name):
     # Montage channel choice
